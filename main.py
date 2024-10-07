@@ -12,7 +12,7 @@ from pymongo.errors import ServerSelectionTimeoutError
 mongo_uri = os.getenv("MONGO_URI", "mongodb://mongodb_service:27017")
 client = pymongo.MongoClient(mongo_uri, serverSelectionTimeoutMS=5000)
 
-# Перевірка доступу до MongoDB
+# Перевірка підключення до MongoDB
 try:
     client.admin.command('ping')
     print("Підключено до MongoDB")
@@ -95,13 +95,26 @@ def send_data_to_socket(username, message):
 # Функція для збереження даних у MongoDB
 def save_data(data):
     try:
-        # Збереження в MongoDB
+        # Перетворюємо дані на словник
         message_data = json.loads(data)
+        print(f"Отримано на сервері: {message_data}")
+        
+        # Додаємо дату до повідомлення
         message_data['date'] = str(datetime.now())
+        
+        # Зберігаємо повідомлення у MongoDB
         collection.insert_one(message_data)
         print(f"Повідомлення збережено в MongoDB: {message_data}")
+    
+    except json.JSONDecodeError:
+        print("Помилка: Невірний формат JSON у повідомленні.")
+    
+    except ServerSelectionTimeoutError:
+        print("Помилка підключення до MongoDB.")
+    
     except Exception as e:
-        print(f"Помилка збереження даних у MongoDB: {e}")
+        # Обробляємо інші помилки
+        print(f"Помилка при збереженні в MongoDB: {e}")
 
 
 # Сокет-сервер для прийому повідомлень
@@ -126,6 +139,7 @@ def run_http_server():
 
 
 if __name__ == '__main__':
-    # Запускаємо HTTP та сокет-сервери
+    # Запускаємо HTTP та сокет-сервери в окремих потоках
     threading.Thread(target=run_http_server).start()
     threading.Thread(target=run_socket_server).start()
+
