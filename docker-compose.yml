@@ -1,0 +1,24 @@
+version: '3.9'
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mongodb_service
+    networks:
+      - mynetwork
+    environment:
+      - MONGO_URI=mongodb://mongodb_service:27017
+
+  mongodb_service:
+    image: mongo:5.0
+    ports:
+      - "27017:27017"
+    networks:
+      - mynetwork
+
+networks:
+  mynetwork:
+    driver: bridge
+
